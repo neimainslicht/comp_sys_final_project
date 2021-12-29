@@ -1,5 +1,7 @@
 #include <stdio.h>
 
+//see if this gets pushed
+
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size)
 {
 
