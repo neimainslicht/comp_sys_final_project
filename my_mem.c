@@ -1,6 +1,13 @@
 #include <stdio.h>
 
-//see if this gets pushed
+typedef struct  {
+  int num_blocks_used;
+  int num_blocks_free;
+  int smallest_block_free;
+  int smallest_block_used;
+  int largest_block_free;
+  int largest_block_used;
+} mem_stats_struct, *mem_stats_ptr;
 
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size)
 {
