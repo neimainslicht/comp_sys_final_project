@@ -178,12 +178,23 @@ void *my_malloc(unsigned size)
     //if we found a large enough block, allocate enough memory and save the rest in free list
     if (free_head->size >= size)
     {
-      //insert into used
-      insert_used(free_head->location, size, free_head->global_size);
+      if (free_head->size >= size * 2)//if we found a block too big, split it and add remainder to the free list
+      {
+        //insert into used
+        insert_used(free_head->location, size, free_head->global_size);
 
-      //reduce the amount of memory in the block we found in the free list by size
-      free_head->location = free_head->location + size;
-      free_head->size = free_head->size - size;
+        //reduce the amount of memory in the block we found in the free list by size
+        free_head->location = free_head->location + size;
+        free_head->size = free_head->size - size;
+      }
+      else
+      {
+        //insert into used
+        insert_used(free_head->location, free_head->size, free_head->global_size);
+
+        //delete from free
+        delete_free(free_head->location);
+      }
       
       
     }
