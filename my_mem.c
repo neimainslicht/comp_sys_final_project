@@ -1,4 +1,140 @@
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdbool.h>
+#include <errno.h>
+
+
+//used and free lists are implemented as linked lists
+struct node {
+   int *size; //pointer to size of block
+   int *global_size; //pointer to size of the entire memory
+   void *location; //pointer to location
+   struct node *next;
+};
+
+struct node *used_head = NULL; //head pointer to used list
+struct node *used_cur = NULL; //current pointer to used list
+struct node *free_head = NULL; //head pointer to free list
+struct node *free_cur = NULL; //current pointer to free list
+
+//insert node at the front of used list
+void insert_used(void *location, int *size, int *global_size) {
+   //create a node
+   struct node *block = (struct node*) malloc(sizeof(struct node));
+	
+   block->location = location;
+   block->size = size;
+   block->global_size = global_size;
+	
+   //point it to old first node
+   block->next = used_head;
+	
+   //point first to new first node
+   used_head = block;
+}
+//insert node at the front of free list
+void insert_free(void *location, int *size, int *global_size) {
+   //create a node
+   struct node *block = (struct node*) malloc(sizeof(struct node));
+	
+   block->location = location;
+   block->size = size;
+   block->global_size = global_size;
+	
+   //point it to old first node
+   block->next = free_head;
+	
+   //point first to new first node
+   free_head = block;
+}
+
+//delete a node from the used list with given memory location
+struct node* delete_used(void *location) 
+{
+
+   //start from the first link
+   struct node* cur = used_head;
+   struct node* prev = NULL;
+	
+   //if list is empty
+   if(used_head == NULL) 
+   {
+      return NULL;
+   }
+
+   //loop through the list
+   while(cur->location != location) 
+   {
+
+      //if it is last node
+      if(cur->next == NULL) 
+      {
+         return NULL;
+      } 
+      else 
+      {
+         //store reference to current link
+         prev = cur;
+         //move to next link
+         cur = cur->next;
+      }
+   }
+
+   //found a match, update the link
+   if(cur == used_head) 
+   {
+      //change first to point to next link
+      free_head = used_head->next;
+   } 
+   else 
+   {
+      //bypass the current link
+      prev->next = cur->next;
+   }    
+
+   return cur;
+}
+
+//delete a node from the free list with given memory location
+struct node* delete_free(void *location) {
+
+   //start from the first link
+   struct node* cur = free_head;
+   struct node* prev = NULL;
+	
+   //if list is empty
+   if(free_head == NULL) {
+      return NULL;
+   }
+
+   //loop through the list
+   while(cur->location != location) {
+
+      //if it is last node
+      if(cur->next == NULL) {
+         return NULL;
+      } else {
+         //store reference to current link
+         prev = cur;
+         //move to next link
+         cur = cur->next;
+      }
+   }
+
+   //found a match, update the link
+   if(cur == free_head) {
+      //change first to point to next link
+      free_head = free_head->next;
+   } else {
+      //bypass the current link
+      prev->next = cur->next;
+   }    
+	
+   return cur;
+}
+
+
 
 typedef struct  {
   int num_blocks_used;
@@ -11,12 +147,48 @@ typedef struct  {
 
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size)
 {
+  insert_used(my_memory, my_mem_size, my_mem_size); //initialize pointer to memory pool
+  insert_free(my_memory, my_mem_size, my_mem_size); //initialize pointer to free list
 
 }
 
 void *my_malloc(unsigned size)
 {
+  //if you are trying to allocate too much memory, send an error
+  if(size > used_head->global_size)
+  {
+    fprintf(stderr, "error: not enough memory available");
+    return -1;
+  }
 
+  //if there is one block of memory in the used list, reallocate
+  else if(used_head->next == NULL)
+  {
+    
+    //reallocate head to the size you need
+    used_head = (void *) realloc(used_head, size);
+
+    //set the next block of memory at the front of the free list containing global size - size amount of memory
+    insert_free(used_head->location + size, used_head->global_size - size, used_head->global_size); 
+  }
+
+  //loop through the free list and look for a block of memory that is large enough to fit size
+  while(free_head != NULL)
+  {
+    //if we found a large enough block, allocate enough memory and save the rest in free list
+    if (free_head->size >= size)
+    {
+      //insert into used
+      insert_used(free_head->location, free_head->size, free_head->global_size);
+
+      //delete from free
+      delete_free(free_head->location);
+      
+    }
+    
+    free_head = free_head->next;
+  }
+  
 }
 
 void my_free(void *mem_pointer)
@@ -56,6 +228,7 @@ int main(int argc, char **argv)
 
   for (int i = 0; sizes[i] != 0; i++) {
     char buf[1024];
+    //my_malloc returns an unspecified pointer
     ptr_array[i] = my_malloc(sizes[i]);
     
     sprintf(buf, "after iteration %d size %d", i, sizes[i]);
