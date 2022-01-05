@@ -14,9 +14,8 @@ struct node {
 };
 
 struct node *used_head = NULL; //head pointer to used list
-struct node *used_cur = NULL; //current pointer to used list
 struct node *free_head = NULL; //head pointer to free list
-struct node *free_cur = NULL; //current pointer to free list
+
 
 //insert node at the front of used list
 void insert_used(void *location, int *size, int *global_size) {
@@ -52,13 +51,59 @@ void insert_free(void *location, int *size, int *global_size) {
 //delete a node from the used list with given memory location
 struct node* delete_used(void *location) 
 {
-
-   //start from the first link
+   //start from the first node
    struct node* cur = used_head;
    struct node* prev = NULL;
 	
-   //if list is empty
+   //if list is empty, return NULL
    if(used_head == NULL) 
+   {
+      return NULL;
+   }
+
+   //loop through the list
+   while(cur->location != location) 
+   {
+
+      //if it is the last node
+      if(cur->next == NULL) 
+      {
+         return NULL;
+      } 
+      else 
+      {
+         //store reference to current node
+         prev = cur;
+         //move to next node
+         cur = cur->next;
+      }
+   }
+
+   //found a match, update the node
+   if(cur == used_head) 
+   {
+      //change head to point to next 
+      free_head = used_head->next;
+   } 
+   else 
+   {
+      //skip over the current node
+      prev->next = cur->next;
+   }    
+
+   return cur;
+}
+
+//delete a node from the free list with given memory location
+struct node* delete_free(void *location) 
+{
+
+   //start from the first node
+   struct node* cur = free_head;
+   struct node* prev = NULL;
+	
+   //if list is empty
+   if(free_head == NULL) 
    {
       return NULL;
    }
@@ -74,60 +119,22 @@ struct node* delete_used(void *location)
       } 
       else 
       {
-         //store reference to current link
+         //store reference to current node
          prev = cur;
-         //move to next link
+         //move to next node
          cur = cur->next;
       }
    }
 
-   //found a match, update the link
-   if(cur == used_head) 
+   //found a match, update the node
+   if(cur == free_head) 
    {
-      //change first to point to next link
-      free_head = used_head->next;
+      //change head to point to next 
+      free_head = free_head->next;
    } 
    else 
    {
-      //bypass the current link
-      prev->next = cur->next;
-   }    
-
-   return cur;
-}
-
-//delete a node from the free list with given memory location
-struct node* delete_free(void *location) {
-
-   //start from the first link
-   struct node* cur = free_head;
-   struct node* prev = NULL;
-	
-   //if list is empty
-   if(free_head == NULL) {
-      return NULL;
-   }
-
-   //loop through the list
-   while(cur->location != location) {
-
-      //if it is last node
-      if(cur->next == NULL) {
-         return NULL;
-      } else {
-         //store reference to current link
-         prev = cur;
-         //move to next link
-         cur = cur->next;
-      }
-   }
-
-   //found a match, update the link
-   if(cur == free_head) {
-      //change first to point to next link
-      free_head = free_head->next;
-   } else {
-      //bypass the current link
+      //skip over the current node
       prev->next = cur->next;
    }    
 	
@@ -165,7 +172,6 @@ void *my_malloc(unsigned size)
   //if there is one block of memory in the used list, reallocate
   else if(used_head->next == NULL)
   {
-    
     //reallocate head to the size you need
     used_head = (void *) realloc(used_head, size);
 
@@ -209,15 +215,26 @@ void *my_malloc(unsigned size)
 
 void my_free(void *mem_pointer)
 {
-  //loop through the free list until you find the mem_pointer you are looking for
-  while(free_head != NULL)
+  struct node *cur = used_head;
+
+  //loop through the used list until you find the mem_pointer you are looking for 
+  while(cur != NULL)
   {
-    if(free_head->location == mem_pointer)
+    //if you found it, delete it from the used list and add it to the free list
+    if(cur->location == mem_pointer)
     {
-      //
+      insert_free(cur->location, cur->size, cur->global_size);
+      delete_used(cur->location);
     }
-    free_head = free_head->next;
+    cur = cur->next;
   }
+
+  if (cur == NULL)
+  {
+    fprintf(stderr, "error: tried to free memory that is not allocated");
+    return -1;
+  }
+  
 
 }
 
