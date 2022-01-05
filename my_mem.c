@@ -160,7 +160,8 @@ void *my_malloc(unsigned size)
     fprintf(stderr, "error: not enough memory available");
     return -1;
   }
-
+  
+  
   //if there is one block of memory in the used list, reallocate
   else if(used_head->next == NULL)
   {
@@ -171,41 +172,52 @@ void *my_malloc(unsigned size)
     //set the next block of memory at the front of the free list containing global size - size amount of memory
     insert_free(used_head->location + size, used_head->global_size - size, used_head->global_size); 
   }
-
+  
+  struct node *cur = free_head;
+  
   //loop through the free list and look for a block of memory that is large enough to fit size
-  while(free_head != NULL)
+  while(cur != NULL)
   {
     //if we found a large enough block, allocate enough memory and save the rest in free list
-    if (free_head->size >= size)
+    if (cur->size >= size)
     {
-      if (free_head->size >= size * 2)//if we found a block too big, split it and add remainder to the free list
+      if (cur->size >= size * 2)//if we found a block too big, split it and add remainder to the free list
       {
         //insert into used
-        insert_used(free_head->location, size, free_head->global_size);
+        insert_used(cur->location, size, cur->global_size);
 
         //reduce the amount of memory in the block we found in the free list by size
-        free_head->location = free_head->location + size;
-        free_head->size = free_head->size - size;
+        cur->location = cur->location + size;
+        cur->size = cur->size - size;
       }
-      else
+      else //otherwise, just use the whole block
       {
         //insert into used
-        insert_used(free_head->location, free_head->size, free_head->global_size);
+        insert_used(cur->location, cur->size, cur->global_size);
 
         //delete from free
-        delete_free(free_head->location);
+        delete_free(cur->location);
       }
       
       
     }
     
-    free_head = free_head->next;
+    cur = cur->next;
   }
   
 }
 
 void my_free(void *mem_pointer)
 {
+  //loop through the free list until you find the mem_pointer you are looking for
+  while(free_head != NULL)
+  {
+    if(free_head->location == mem_pointer)
+    {
+      //
+    }
+    free_head = free_head->next;
+  }
 
 }
 
