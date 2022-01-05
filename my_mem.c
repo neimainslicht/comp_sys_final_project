@@ -16,7 +16,7 @@ struct node {
 struct node *used_head = NULL; //head pointer to used list
 struct node *free_head = NULL; //head pointer to free list
 
-
+//change this to insert by location
 //insert node at the front of used list
 void insert_used(void *location, int *size, int *global_size) {
    //create a node
@@ -165,7 +165,7 @@ void *my_malloc(unsigned size)
   if(size > used_head->global_size)
   {
     fprintf(stderr, "error: not enough memory available");
-    return -1;
+    return NULL;
   }
   
   
@@ -215,6 +215,8 @@ void *my_malloc(unsigned size)
 
 void my_free(void *mem_pointer)
 {
+  //add functionality to merge blocks
+
   struct node *cur = used_head;
 
   //loop through the used list until you find the mem_pointer you are looking for 
@@ -232,7 +234,7 @@ void my_free(void *mem_pointer)
   if (cur == NULL)
   {
     fprintf(stderr, "error: tried to free memory that is not allocated");
-    return -1;
+    return NULL;
   }
   
 
@@ -240,7 +242,7 @@ void my_free(void *mem_pointer)
 
 void mem_get_stats(mem_stats_ptr mem_stats_ptr)
 {
-
+  mem_stats_ptr->largest_block_free = 0;
 }
 
 void print_stats(char *prefix) {
