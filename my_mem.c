@@ -10,7 +10,7 @@ struct node
 {
    int *size; //pointer to size of block
    int *global_size; //pointer to size of the entire memory
-   void *location; //pointer to location
+   int *location; //pointer to location
    struct node *next;
 };
 
@@ -19,7 +19,7 @@ struct node *free_head = NULL; //head pointer to free list
 
 //change this to insert by location
 //insert node in order of location in memory
-void insert_used(void *location, int *size, int *global_size) 
+void insert_used(int *location, int *size, int *global_size) 
 {
    //create a node
    struct node *block = (struct node*) malloc(sizeof(struct node));
@@ -43,7 +43,7 @@ void insert_used(void *location, int *size, int *global_size)
    }
 
    //loop through the list
-   while(cur->location < location) 
+   while(*cur->location < *location) 
    {
       //set prev to cur
       prev = cur;
@@ -58,7 +58,7 @@ void insert_used(void *location, int *size, int *global_size)
 }
 
 //insert node in order of location in memory
-void insert_free(void *location, int *size, int *global_size) 
+void insert_free(int *location, int *size, int *global_size) 
 {
    //create a node
    struct node *block = (struct node*) malloc(sizeof(struct node));
@@ -82,7 +82,7 @@ void insert_free(void *location, int *size, int *global_size)
    }
 
    //loop through the list
-   while(cur->location < location) 
+   while(*cur->location < *location) 
    {
       //set prev to cur
       prev = cur;
@@ -97,7 +97,7 @@ void insert_free(void *location, int *size, int *global_size)
 }
 
 //delete a node from the used list with given memory location
-struct node* delete_used(void *location) 
+void delete_used(int *location) 
 {
    //start from the first node
    struct node* cur = used_head;
@@ -110,7 +110,7 @@ struct node* delete_used(void *location)
    }
 
    //loop through the list
-   while(cur->location != location) 
+   while(*cur->location != *location) 
    {
 
       //if it is the last node
@@ -143,7 +143,7 @@ struct node* delete_used(void *location)
 }
 
 //delete a node from the free list with given memory location
-struct node* delete_free(void *location) 
+void delete_free(int *location) 
 {
 
    //start from the first node
@@ -157,7 +157,7 @@ struct node* delete_free(void *location)
    }
 
    //loop through the list
-   while(cur->location != location) 
+   while(*cur->location != *location) 
    {
 
       //if it is last node
@@ -201,7 +201,7 @@ void merge_blocks(void)
    {
       if (prev != NULL)
       {
-         int size = prev->size;
+         int size = *prev->size;
 
          //if previous block is next to current block in memory, merge them
          if (prev->location + size == cur->location)
@@ -225,15 +225,15 @@ void merge_blocks(void)
 
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size)
 {
-  insert_used(my_memory, my_mem_size, my_mem_size); //initialize pointer to memory pool
-  insert_free(my_memory, my_mem_size, my_mem_size); //initialize pointer to free list
+  insert_used((int *) my_memory, (int *) my_mem_size, (int *) my_mem_size); //initialize pointer to memory pool
+  insert_free((int *) my_memory, (int *) my_mem_size, (int *) my_mem_size); //initialize pointer to free list
 
 }
 
 void *my_malloc(unsigned size)
 {
   //if you are trying to allocate too much memory, send an error
-  if(size > used_head->global_size)
+  if(size > *used_head->global_size)
   {
     fprintf(stderr, "error: not enough memory available");
     return NULL;
@@ -246,15 +246,15 @@ void *my_malloc(unsigned size)
 
   {
     //if we found a large enough block, allocate enough memory and save the rest in free list
-    if (cur->size >= size)
+    if (*cur->size >= size)
 
     {
       //if we found a block too big, split it and add remainder to the free list
-      if (cur->size >= size * 2)
+      if (*cur->size >= size * 2)
 
       {
         //insert into used
-        insert_used(cur->location, size, cur->global_size);
+        insert_used(cur->location, (int *) size, cur->global_size);
 
         //reduce the amount of memory in the block we found in the free list by size
         cur->location = cur->location + size;
@@ -289,7 +289,7 @@ void my_free(void *mem_pointer)
   while(cur != NULL)
   {
     //if you found it, delete it from the used list and add it to the free list
-    if(cur->location == mem_pointer)
+    if(*cur->location == (int) mem_pointer)
     {
       insert_free(cur->location, cur->size, cur->global_size);
       delete_used(cur->location);
@@ -300,7 +300,7 @@ void my_free(void *mem_pointer)
   if (cur == NULL)
   {
     fprintf(stderr, "error: tried to free memory that is not allocated");
-    return NULL;
+    return;
   }
   
 
@@ -320,7 +320,7 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr)
    //get stats for free
    struct node* free_cur = free_head;
    int num_blocks_free = 0;
-   int smallest_size_free = free_head->global_size;
+   int smallest_size_free = *free_head->global_size;
    int largest_size_free = 0;
    mem_stats_ptr->smallest_block_free = 0;
    mem_stats_ptr->largest_block_free = 0;
@@ -329,13 +329,13 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr)
    while (free_cur != NULL)
    {
       //find smallest free block
-      if (free_cur->size < smallest_size_free)
+      if (*free_cur->size < smallest_size_free)
       {
          mem_stats_ptr->smallest_block_free = (int) free_cur->location;
       }
       
       //find largest free block
-      else if (free_cur->size > largest_size_free)
+      else if (*free_cur->size > largest_size_free)
       {
          mem_stats_ptr->largest_block_free = (int) free_cur->location;
       }
@@ -351,7 +351,7 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr)
    //do the same for used list
    struct node* used_cur = used_head;
    int num_blocks_used = 0;
-   int smallest_size_used = used_head->global_size;
+   int smallest_size_used = *used_head->global_size;
    int largest_size_used = 0;
    mem_stats_ptr->smallest_block_used = 0;
    mem_stats_ptr->largest_block_used = 0;
@@ -360,13 +360,13 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr)
    while (used_cur != NULL)
    {
       //find smallest used block
-      if (used_cur->size < smallest_size_used)
+      if (*used_cur->size < smallest_size_used)
       {
          mem_stats_ptr->smallest_block_used = (int) used_cur->location;
       }
       
       //find largest used block
-      else if (used_cur->size > largest_size_used)
+      else if (*used_cur->size > largest_size_used)
       {
          mem_stats_ptr->largest_block_used = (int) used_cur->location;
       }
