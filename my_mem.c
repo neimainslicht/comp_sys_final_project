@@ -6,7 +6,8 @@
 
 
 //used and free lists are implemented as linked lists
-struct node {
+struct node 
+{
    int *size; //pointer to size of block
    int *global_size; //pointer to size of the entire memory
    void *location; //pointer to location
@@ -17,7 +18,7 @@ struct node *used_head = NULL; //head pointer to used list
 struct node *free_head = NULL; //head pointer to free list
 
 //change this to insert by location
-//insert node at the front of used list
+//insert node in order of location in memory
 void insert_used(void *location, int *size, int *global_size) {
    //create a node
    struct node *block = (struct node*) malloc(sizeof(struct node));
@@ -25,14 +26,37 @@ void insert_used(void *location, int *size, int *global_size) {
    block->location = location;
    block->size = size;
    block->global_size = global_size;
+
+   //start from the first node
+   struct node* cur = used_head;
+   struct node* prev = NULL;
 	
-   //point it to old first node
-   block->next = used_head;
+   //if list is empty, assign block as the head
+   if(free_head == NULL) 
+   {
+      //point block->next to NULL
+      block->next = NULL;
 	
-   //point first to new first node
-   used_head = block;
+      //point head to new first node
+      free_head = block;
+   }
+
+   //loop through the list
+   while(cur->location < location) 
+   {
+      //set prev to cur
+      prev = cur;
+      //move to next node
+      cur = cur->next;
+   }
+
+   //insert block
+   prev->next = block;
+   block->next = cur;    
+
 }
-//insert node at the front of free list
+
+//insert node in order of location in memory
 void insert_free(void *location, int *size, int *global_size) {
    //create a node
    struct node *block = (struct node*) malloc(sizeof(struct node));
@@ -40,12 +64,34 @@ void insert_free(void *location, int *size, int *global_size) {
    block->location = location;
    block->size = size;
    block->global_size = global_size;
+
+   //start from the first node
+   struct node* cur = free_head;
+   struct node* prev = NULL;
 	
-   //point it to old first node
-   block->next = free_head;
+   //if list is empty, assign block as the head
+   if(free_head == NULL) 
+   {
+      //point block->next to NULL
+      block->next = NULL;
 	
-   //point first to new first node
-   free_head = block;
+      //point head to new first node
+      free_head = block;
+   }
+
+   //loop through the list
+   while(cur->location < location) 
+   {
+      //set prev to cur
+      prev = cur;
+      //move to next node
+      cur = cur->next;
+   }
+
+   //insert block
+   prev->next = block;
+   block->next = cur;    
+
 }
 
 //delete a node from the used list with given memory location
@@ -83,7 +129,7 @@ struct node* delete_used(void *location)
    if(cur == used_head) 
    {
       //change head to point to next 
-      free_head = used_head->next;
+      used_head = used_head->next;
    } 
    else 
    {
