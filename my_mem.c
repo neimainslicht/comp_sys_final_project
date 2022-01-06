@@ -221,14 +221,7 @@ void merge_blocks(void)
 
 }
 
-typedef struct  {
-  int num_blocks_used;
-  int num_blocks_free;
-  int smallest_block_free;
-  int smallest_block_used;
-  int largest_block_free;
-  int largest_block_used;
-} mem_stats_struct, *mem_stats_ptr;
+
 
 void mem_init(unsigned char *my_memory, unsigned int my_mem_size)
 {
@@ -289,7 +282,7 @@ void my_free(void *mem_pointer)
 {
   //merge adjacent free blocks
   merge_blocks();
-  
+
   struct node *cur = used_head;
 
   //loop through the used list until you find the mem_pointer you are looking for 
@@ -313,9 +306,77 @@ void my_free(void *mem_pointer)
 
 }
 
+typedef struct  {
+  int num_blocks_used;
+  int num_blocks_free;
+  int smallest_block_free;
+  int smallest_block_used;
+  int largest_block_free;
+  int largest_block_used;
+} mem_stats_struct, *mem_stats_ptr;
+
 void mem_get_stats(mem_stats_ptr mem_stats_ptr)
 {
-  mem_stats_ptr->largest_block_free = 0;
+   //get stats for free
+   struct node* free_cur = free_head;
+   int num_blocks_free = 0;
+   int smallest_size_free = free_head->global_size;
+   int largest_size_free = 0;
+   mem_stats_ptr->smallest_block_free = 0;
+   mem_stats_ptr->largest_block_free = 0;
+
+   //loop through all the nodes in free
+   while (free_cur != NULL)
+   {
+      //find smallest free block
+      if (free_cur->size < smallest_size_free)
+      {
+         mem_stats_ptr->smallest_block_free = (int) free_cur->location;
+      }
+      
+      //find largest free block
+      else if (free_cur->size > largest_size_free)
+      {
+         mem_stats_ptr->largest_block_free = (int) free_cur->location;
+      }
+      
+      //increment the number of blocks
+      num_blocks_free++;
+      free_cur = free_cur->next;
+   }
+   
+   mem_stats_ptr->num_blocks_free = num_blocks_free;
+
+   /*-------------------------------------------------*/
+   //do the same for used list
+   struct node* used_cur = used_head;
+   int num_blocks_used = 0;
+   int smallest_size_used = used_head->global_size;
+   int largest_size_used = 0;
+   mem_stats_ptr->smallest_block_used = 0;
+   mem_stats_ptr->largest_block_used = 0;
+
+   //loop through all the nodes in free
+   while (used_cur != NULL)
+   {
+      //find smallest free block
+      if (used_cur->size < smallest_size_used)
+      {
+         mem_stats_ptr->smallest_block_used = (int) used_cur->location;
+      }
+      
+      //find largest free block
+      else if (used_cur->size > largest_size_used)
+      {
+         mem_stats_ptr->largest_block_used = (int) used_cur->location;
+      }
+      
+      //increment the number of blocks
+      num_blocks_used++;
+      used_cur = used_cur->next;
+   }
+   
+   mem_stats_ptr->num_blocks_used = num_blocks_used;
 }
 
 void print_stats(char *prefix) {
