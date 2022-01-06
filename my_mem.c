@@ -214,17 +214,6 @@ void *my_malloc(unsigned size)
     return NULL;
   }
   
-  
-  //if there is one block of memory in the used list, reallocate
-  else if(used_head->next == NULL)
-  {
-    //reallocate head to the size you need
-    used_head = (void *) realloc(used_head, size);
-
-    //set the next block of memory at the front of the free list containing global size - size amount of memory
-    insert_free(used_head->location + size, used_head->global_size - size, used_head->global_size); 
-  }
-  
   struct node *cur = free_head;
   
   //loop through the free list and look for a block of memory that is large enough to fit size
