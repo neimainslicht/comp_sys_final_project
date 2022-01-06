@@ -356,16 +356,16 @@ void mem_get_stats(mem_stats_ptr mem_stats_ptr)
    mem_stats_ptr->smallest_block_used = 0;
    mem_stats_ptr->largest_block_used = 0;
 
-   //loop through all the nodes in free
+   //loop through all the nodes in used
    while (used_cur != NULL)
    {
-      //find smallest free block
+      //find smallest used block
       if (used_cur->size < smallest_size_used)
       {
          mem_stats_ptr->smallest_block_used = (int) used_cur->location;
       }
       
-      //find largest free block
+      //find largest used block
       else if (used_cur->size > largest_size_used)
       {
          mem_stats_ptr->largest_block_used = (int) used_cur->location;
@@ -406,7 +406,6 @@ int main(int argc, char **argv)
 
   for (int i = 0; sizes[i] != 0; i++) {
     char buf[1024];
-    //my_malloc returns an unspecified pointer
     ptr_array[i] = my_malloc(sizes[i]);
     
     sprintf(buf, "after iteration %d size %d", i, sizes[i]);
