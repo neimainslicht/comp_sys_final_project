@@ -19,7 +19,8 @@ struct node *free_head = NULL; //head pointer to free list
 
 //change this to insert by location
 //insert node in order of location in memory
-void insert_used(void *location, int *size, int *global_size) {
+void insert_used(void *location, int *size, int *global_size) 
+{
    //create a node
    struct node *block = (struct node*) malloc(sizeof(struct node));
 	
@@ -57,7 +58,8 @@ void insert_used(void *location, int *size, int *global_size) {
 }
 
 //insert node in order of location in memory
-void insert_free(void *location, int *size, int *global_size) {
+void insert_free(void *location, int *size, int *global_size) 
+{
    //create a node
    struct node *block = (struct node*) malloc(sizeof(struct node));
 	
@@ -187,7 +189,37 @@ struct node* delete_free(void *location)
    return cur;
 }
 
+//merge free blocks that are adjacent in memory
+void merge_blocks(void)
+{
+   //add functionality to merge blocks
+   struct node *cur = free_head;
+   struct node *prev = NULL;
 
+   //loop through the free list and merge adjacent blocks
+   while(cur != NULL)
+   {
+      if (prev != NULL)
+      {
+         int size = prev->size;
+
+         //if previous block is next to current block in memory, merge them
+         if (prev->location + size == cur->location)
+         {
+            prev->size = cur->size + size;
+            cur = cur->next;
+            prev->next = cur;
+         }
+         
+      }
+      
+      //store reference to current node
+      prev = cur;
+      //move to next node
+      cur = cur->next;
+  }
+
+}
 
 typedef struct  {
   int num_blocks_used;
@@ -218,11 +250,15 @@ void *my_malloc(unsigned size)
   
   //loop through the free list and look for a block of memory that is large enough to fit size
   while(cur != NULL)
+
   {
     //if we found a large enough block, allocate enough memory and save the rest in free list
     if (cur->size >= size)
+
     {
-      if (cur->size >= size * 2)//if we found a block too big, split it and add remainder to the free list
+      //if we found a block too big, split it and add remainder to the free list
+      if (cur->size >= size * 2)
+
       {
         //insert into used
         insert_used(cur->location, size, cur->global_size);
@@ -231,7 +267,9 @@ void *my_malloc(unsigned size)
         cur->location = cur->location + size;
         cur->size = cur->size - size;
       }
-      else //otherwise, just use the whole block
+      
+      //otherwise, just use the whole block
+      else 
       {
         //insert into used
         insert_used(cur->location, cur->size, cur->global_size);
@@ -239,8 +277,7 @@ void *my_malloc(unsigned size)
         //delete from free
         delete_free(cur->location);
       }
-      
-      
+       
     }
     
     cur = cur->next;
@@ -250,8 +287,9 @@ void *my_malloc(unsigned size)
 
 void my_free(void *mem_pointer)
 {
-  //add functionality to merge blocks
-
+  //merge adjacent free blocks
+  merge_blocks();
+  
   struct node *cur = used_head;
 
   //loop through the used list until you find the mem_pointer you are looking for 
