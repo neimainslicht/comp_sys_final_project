@@ -46,7 +46,7 @@ void insert_used(unsigned char location, int size, int global_size)
    //loop through the list
    else
    {
-      while(cur->location < location) 
+      while(cur != NULL && cur->location < location) 
       {
          //set prev to cur
          prev = cur;
@@ -71,7 +71,7 @@ void insert_free(unsigned char location, int size, int global_size)
 
    //start from the first node
    struct node* cur = free_head;
-   struct node* prev = NULL;
+   struct node* prev = (struct node*) malloc(sizeof(struct node));
 	
    //if list is empty, assign block as the head
    if(free_head == NULL) 
@@ -86,7 +86,7 @@ void insert_free(unsigned char location, int size, int global_size)
    //loop through the list
    else
    {
-      while(cur->location < location) 
+      while(cur != NULL && cur->location < location) 
       {
          //set prev to cur
          prev = cur;
@@ -106,7 +106,7 @@ void delete_used(unsigned char location)
 {
    //start from the first node
    struct node* cur = used_head;
-   struct node* prev = NULL;
+   struct node* prev = (struct node*) malloc(sizeof(struct node));
 	
    //if list is empty, return
    if(used_head == NULL) 
@@ -115,7 +115,7 @@ void delete_used(unsigned char location)
    }
 
    //loop through the list
-   while(cur->location != location) 
+   while(cur != NULL && cur->location != location) 
    {
 
       //if it is the last node
@@ -152,7 +152,7 @@ void delete_free(unsigned char location)
 
    //start from the first node
    struct node* cur = free_head;
-   struct node* prev = NULL;
+   struct node* prev = (struct node*) malloc(sizeof(struct node));
 	
    //if list is empty
    if(free_head == NULL) 
@@ -161,7 +161,7 @@ void delete_free(unsigned char location)
    }
 
    //loop through the list
-   while(cur->location != location) 
+   while(cur != NULL && cur->location != location) 
    {
 
       //if it is last node
@@ -197,7 +197,7 @@ void merge_blocks(void)
 {
    //add functionality to merge blocks
    struct node *cur = free_head;
-   struct node *prev = NULL;
+   struct node *prev = (struct node*) malloc(sizeof(struct node));
 
    //loop through the free list and merge adjacent blocks
    while(cur != NULL)
@@ -295,6 +295,7 @@ void my_free(void *mem_pointer)
     {
       insert_free(cur->location, cur->size, cur->global_size);
       delete_used(cur->location);
+      return;
     }
     cur = cur->next;
   }
