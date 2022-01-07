@@ -197,7 +197,7 @@ void merge_blocks(void)
 {
    //add functionality to merge blocks
    struct node *cur = free_head;
-   struct node *prev = (struct node*) malloc(sizeof(struct node));
+   struct node *prev = NULL;
 
    //loop through the free list and merge adjacent blocks
    while(cur != NULL)
@@ -236,9 +236,14 @@ void mem_init(unsigned char *my_memory, unsigned int my_mem_size)
 void *my_malloc(unsigned size)
 {
   //if you are trying to allocate too much memory, send an error
-  if(size > used_head->global_size)
+  if(used_head == NULL)
   {
-    fprintf(stderr, "error: not enough memory available");
+     used_head = (struct node*) malloc(sizeof(struct node));
+  }
+  else if((unsigned int) size > used_head->global_size)
+  {
+    fprintf(stderr, "error: not enough memory available\n");
+    return NULL;
   }
   
   struct node *cur = free_head;
@@ -293,16 +298,17 @@ void my_free(void *mem_pointer)
     //if you found it, delete it from the used list and add it to the free list
     if((intptr_t) mem_pointer == cur->location)//cast to intptr_t to store memory address
     {
-      insert_free(cur->location, cur->size, cur->global_size);
-      delete_used(cur->location);
-      return;
+       printf("mem_pointer: %ld, cur->location: %d\n", (intptr_t) mem_pointer, cur->location);
+       insert_free(cur->location, cur->size, cur->global_size);
+       delete_used(cur->location);
+       return;
     }
     cur = cur->next;
   }
 
   if (cur == NULL)
   {
-    fprintf(stderr, "error: tried to free memory that is not allocated");
+    fprintf(stderr, "error: tried to free memory that is not allocated\n");
     return;
   }
   
@@ -396,8 +402,42 @@ void print_stats(char *prefix) {
 	 mem_stats.largest_block_used);
 }
 
+/*------TEST FUNCTIONS--------*/
+//try to malloc when all the memory is allocated
+void test_malloc_nothing()
+{
+   unsigned int global_mem_size = 50;
+   unsigned char *global_memory = malloc(global_mem_size);
+   unsigned int size = 50;
+   my_malloc(size);
+   my_malloc(size);//if malloc returns an error, free is working
+}
+
+//try to free something that is not malloced
+void test_free_nothing()
+{
+   unsigned int global_mem_size = 50;
+   unsigned char *global_memory = malloc(global_mem_size);
+   unsigned int size = 50;
+   unsigned char *ptr = my_malloc(size);
+   my_free(ptr);
+   my_free(ptr);//if free returns an error, free is working
+}
+
+//try allocating more than the global memory size
+void test_malloc_more()
+{
+   unsigned int global_mem_size = 50;
+   unsigned char *global_memory = malloc(global_mem_size);
+   unsigned int size = 50;
+   unsigned char *ptr = my_malloc(size+50);//if malloc returns an error, malloc is working
+}
+
 int main(int argc, char **argv)
 {
+   test_free_nothing();
+   test_malloc_more();
+   test_malloc_nothing();
   unsigned int global_mem_size = 1024 * 1024;
   unsigned char *global_memory = malloc(global_mem_size);
 
